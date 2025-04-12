@@ -16,14 +16,6 @@ from util import AverageMeter
 
 
 
-def make_dir(directory_path, new_folder_name):
-    """Creates an expected directory if it does not exist"""
-    directory_path = os.path.join(directory_path, new_folder_name)
-    if not os.path.exists(directory_path):
-        os.makedirs(directory_path)
-    return directory_path
-
-
 def inference(net, data_loader_test):
     net.eval()
     feature_vector = []
@@ -74,3 +66,7 @@ def res_search_fixed_clus(adata, fixed_clus_count, increment=0.02):
     reso = resolutions[np.argmin(dis)]
 
     return reso
+
+def train(args):
+    pass
+

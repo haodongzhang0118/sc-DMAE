@@ -50,14 +50,14 @@ class Loader(object):
         """Pytorch data loader
 
         Args:
-            config (dict): Dictionary containing options and arguments.
+            config (argparse): Dictionary containing options and arguments.
             dataset_name (str): Name of the dataset to load
             drop_last (bool): True in training mode, False in evaluation.
             kwargs (dict): Dictionary for additional parameters if needed
 
         """
         # Get batch size
-        batch_size = config["batch_size"]
+        batch_size = config.batch_size
         # Get config
         self.config = config
         # Get the datasets
@@ -109,7 +109,7 @@ class scRNADataset(Dataset):
             self.iterator = self.prepare_training_pairs
         else:
             self.iterator = self.prepare_test_pairs
-        self.paths = config["paths"]
+        self.paths = {"data": config.data_path, "results": config.results_path, "checkpoint": config.checkpoint_path}
         self.dataset_name = dataset_name
         self.data_path = os.path.join(self.paths["data"], dataset_name)
         self.data, self.labels = self._load_data()
@@ -140,11 +140,11 @@ class scRNADataset(Dataset):
         data, labels = self.load_data(self.data_path)
 
         n_classes = len(list(set(labels.reshape(-1, ).tolist())))
-        self.config["feat_dim"] = data.shape[1]
-        if self.config["n_classes"] != n_classes:
-            self.config["n_classes"] = n_classes
+        self.config.feat_dim = data.shape[1]
+        if self.config.n_classes != n_classes:
+            self.config.n_classes = n_classes
             print(f"{50 * '>'} Number of classes changed "
-                  f"from {self.config['n_classes']} to {n_classes} {50 * '<'}")
+                  f"from {self.config.n_classes} to {n_classes} {50 * '<'}")
         self.data_max = np.max(np.abs(data))
         self.data_min = np.min(np.abs(data))
 
