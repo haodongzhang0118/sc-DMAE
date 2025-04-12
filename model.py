@@ -144,8 +144,17 @@ class Autoencoder(nn.Module):
             weighted_reconstruction_loss = precision_r * reconstruction_loss + precision_r/2
 
             loss = weighted_reconstruction_loss + weighted_latent_loss + weighted_mask_loss
-            return loss
+            
         else:
             loss = weight_r * reconstruction_loss + weight_m * mask_loss + weight_l * latent_loss
-            return loss
+        
+        return {
+            "total_loss": loss,
+            "reconstruction_loss": reconstruction_loss,
+            "latent_loss": latent_loss,
+            "mask_loss": mask_loss,
+            "weight_r": weight_r if not UWL else precision_r.item(),
+            "weight_m": weight_m if not UWL else precision_m.item(),
+            "weight_l": weight_l if not UWL else precision_l.item()
+        }
 
