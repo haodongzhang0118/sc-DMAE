@@ -120,7 +120,7 @@ class Autoencoder(nn.Module):
             "latent_T": latent_T
         }
     
-    def compute_loss(self, x, y, comp_x, mask, weight_r = 0.3, weight_m = 0.4, weight_l=0.3, DTP=False):
+    def compute_loss(self, x, y, comp_x, mask, weight_r = 0.3, weight_m = 0.4, weight_l=0.3, UWL=False):
         outputs = self(x, comp_x)
         w_nums = mask * self.masked_weights + (1 - mask) * (1 - self.masked_weights)
         reconstruction_loss = (torch.mul(w_nums, mse(outputs["reconstruction"], y, reduction='none'))).mean()
@@ -130,7 +130,7 @@ class Autoencoder(nn.Module):
         latent_S = F.normalize(outputs["latent_S"], dim=1)
         latent_T = F.normalize(outputs["latent_T"], dim=1)
         latent_loss = 1 - torch.cosine_similarity(latent_S, latent_T, dim=1).mean()
-        if DTP:
+        if UWL:
             weight_r = torch.clamp(self.weight_r, min=-5, max=5)
             weight_m = torch.clamp(self.weight_m, min=-5, max=5)
             weight_l = torch.clamp(self.weight_l, min=-5, max=5)
