@@ -1,6 +1,4 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-
 import torch
 import pandas as pd
 import numpy as np
@@ -10,7 +8,7 @@ from sklearn.metrics import silhouette_score
 from tqdm import tqdm
 
 from datasets import Loader, apply_noise
-from model import AutoEncoder
+from model import Autoencoder
 from evaluate import evaluate
 from util import AverageMeter
 
@@ -78,7 +76,7 @@ def train(args):
     max_epochs = args.epochs
     mask_prob = [0.4] * X_shape
 
-    model = AutoEncoder(num_genes=X_shape, 
+    model = Autoencoder(num_genes=X_shape, 
                         hidden_size=args.hidden_size, 
                         dropout=args.dropout, 
                         masked_weights=args.masked_weights, 
@@ -136,7 +134,7 @@ def train(args):
                     f"{meter.weight_m_avg:.6f},{meter.latent_loss_avg:.6f},"
                     f"{meter.weight_l_avg:.6f}\n")
         
-        if (epoch+1) % 20 == 0:
+        if (epoch+1) % 20 == 0 or epoch == max_epochs - 1:
             torch.save({
                 "optimizer": optimizer.state_dict(),
                 "model": model.state_dict()
@@ -176,11 +174,7 @@ def train(args):
             pd.DataFrame({"True": true_label, 
                         "Pred": pred_label}).to_csv(args.save_path +"/types_"+str(epoch)+".txt")
             
-    torch.save({
-        "optimizer": optimizer.state_dict(),
-        "model": model.state_dict()
-        }, args.save_path + f"/checkpoint_{epoch+1}.pth"
-    )
+    return results
         
         
             

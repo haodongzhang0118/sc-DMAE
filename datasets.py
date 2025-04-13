@@ -140,7 +140,7 @@ class scRNADataset(Dataset):
         data, labels = self.load_data(self.data_path)
 
         n_classes = len(list(set(labels.reshape(-1, ).tolist())))
-        self.config.feat_dim = data.shape[1]
+        self.config.data_dim = data.shape[1]
         if self.config.n_classes != n_classes:
             self.config.n_classes = n_classes
             print(f"{50 * '>'} Number of classes changed "
