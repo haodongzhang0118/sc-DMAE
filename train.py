@@ -15,7 +15,6 @@ from evaluate import evaluate
 from util import AverageMeter
 
 
-
 def inference(net, data_loader_test):
     net.eval()
     feature_vector = []
