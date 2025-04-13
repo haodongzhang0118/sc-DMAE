@@ -250,4 +250,7 @@ def apply_noise(X, p=[0.2,0.4]):
     corrupted_X = torch.where(
         should_swap == 1, X[torch.randperm(X.shape[0])], X)
     masked = (corrupted_X != X).float()
-    return corrupted_X, masked
+    comp_mask = 1 - masked
+    corrupted_X_comp = torch.where(
+        comp_mask == 1, X[torch.randperm(X.shape[0])], X)
+    return corrupted_X, masked, corrupted_X_comp

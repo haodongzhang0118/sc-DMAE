@@ -44,18 +44,20 @@ def parse_args():
                         help='Number of training epochs')
     parser.add_argument('--learning_rate', type=float, default=1e-3,
                         help='Learning rate')
-    parser.add_argument('--latent_dim', type=int, default=128,
+    parser.add_argument('--hidden_size', type=int, default=128,
+                        help='Dimension of hidden space')
+    parser.add_argument('--dropout', type=float, default=0.3,
+                        help='Dropout rate')
+    parser.add_argument('--masked_weights', type=float, default=0.75,
+                        help='Masked weights')
+    parser.add_argument('--latent_dim', type=int, default=32,
                         help='Dimension of latent space')
     parser.add_argument('--num_workers', type=int, default=4,
                         help='Number of data loading workers')
-    
-    # Run parameters
-    parser.add_argument('--seed', type=int, default=None,
-                        help='Random seed (default: random)')
-    parser.add_argument('--run_all', action='store_true',
-                        help='Run on all datasets')
-    parser.add_argument('--run_id', type=int, default=0,
-                        help='Run identifier for multiple runs')
+    parser.add_argument('--CNN', type=bool, default=False,
+                        help='Using CNN as the backbone')
+    parser.add_argument('--UWL', type=bool, default=False,
+                        help='Using UWL choose weight of each loss')
     
     return parser.parse_args()
 

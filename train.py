@@ -2,12 +2,12 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 import torch
-import random
 import pandas as pd
 import numpy as np
 import scanpy as sc
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+from tqdm import tqdm
 
 from datasets import Loader, apply_noise
 from model import AutoEncoder
@@ -68,5 +68,73 @@ def res_search_fixed_clus(adata, fixed_clus_count, increment=0.02):
     return reso
 
 def train(args):
-    pass
+    data_load = Loader(args, dataset_name=args.dataset, drop_last=True)
+    data_loader = data_load.train_loader
+    data_loader_test = data_load.test_loader
+    X_shape = args.data_dim
 
+    init_lr = args.learning_rate
+    max_epochs = args.epochs
+    mask_prob = [0.4] * X_shape
+
+    model = AutoEncoder(num_genes=X_shape, 
+                        hidden_size=args.hidden_size, 
+                        dropout=args.dropout, 
+                        masked_weights=args.masked_weights, 
+                        CNN=args.CNN,
+                        UWL=args.UWL).cuda()
+    model_checkpoint = "checkpoint.pth"
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=init_lr)
+    
+    # Create a logger to save metrics
+    log_file = os.path.join(args.save_path, "training_log.csv")
+    os.makedirs(args.save_path, exist_ok=True)
+    
+    # Initialize the log with headers
+    with open(log_file, 'w') as f:
+        f.write("epoch,total_loss,reconstruction_loss,weight_r,mask_loss,weight_m,latent_loss,weight_l\n")
+    
+    # Main training loop with tqdm for epochs
+    epoch_pbar = tqdm(range(max_epochs), desc="Training", unit="epoch")
+    for epoch in epoch_pbar:
+        model.train()
+        meter = AverageMeter()
+        
+        # Inner loop with tqdm for batches
+        batch_pbar = tqdm(data_loader, desc=f"Epoch {epoch+1}/{max_epochs}", 
+                          leave=False, unit="batch")
+        
+        for i, (x, y) in enumerate(batch_pbar):
+            x = x.cuda()
+            x_corrputed, mask, corrupted_X_comp = apply_noise(x, mask_prob)
+            optimizer.zero_grad()
+            loss = model.compute_loss(
+                x=x_corrputed,
+                y=x,
+                comp_x=corrupted_X_comp,
+                mask=mask
+            )
+            loss["total_loss"].backward()
+            optimizer.step()
+            model._update_teacher()
+
+            meter.update(loss)
+            batch_pbar.set_postfix({"loss": f"{meter.avg:.4f}"})
+        
+        epoch_pbar.set_postfix({
+            "loss": f"{meter.avg:.4f}",
+            "r_loss": f"{meter.reconstruction_loss_avg:.4f}",
+            "m_loss": f"{meter.mask_loss_avg:.4f}",
+            "l_loss": f"{meter.latent_loss_avg:.4f}"
+        })
+        
+        # Log metrics to file
+        with open(log_file, 'a') as f:
+            f.write(f"{epoch+1},{meter.avg:.6f},{meter.reconstruction_loss_avg:.6f},"
+                    f"{meter.weight_r_avg:.6f},{meter.mask_loss_avg:.6f},"
+                    f"{meter.weight_m_avg:.6f},{meter.latent_loss_avg:.6f},"
+                    f"{meter.weight_l_avg:.6f}\n")
+        
+
+    

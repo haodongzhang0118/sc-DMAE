@@ -61,6 +61,7 @@ class Autoencoder(nn.Module):
                  dropout=0,
                  masked_weights=0.75,
                  CNN=False,
+                 UWL=False,
                  m=0.999):
         super().__init__()
 
@@ -69,6 +70,7 @@ class Autoencoder(nn.Module):
         self.dropout = dropout
         self.masked_weights = masked_weights
         self.m = m
+        self.UWL = UWL
 
         self.encoderS = BaseEncoder(num_genes=num_genes, 
                                     hidden_size=hidden_size, 
@@ -120,7 +122,7 @@ class Autoencoder(nn.Module):
             "latent_T": latent_T
         }
     
-    def compute_loss(self, x, y, comp_x, mask, weight_r = 0.3, weight_m = 0.4, weight_l=0.3, UWL=False):
+    def compute_loss(self, x, y, comp_x, mask, weight_r = 0.3, weight_m = 0.4, weight_l=0.3):
         outputs = self(x, comp_x)
         w_nums = mask * self.masked_weights + (1 - mask) * (1 - self.masked_weights)
         reconstruction_loss = (torch.mul(w_nums, mse(outputs["reconstruction"], y, reduction='none'))).mean()
@@ -130,7 +132,7 @@ class Autoencoder(nn.Module):
         latent_S = F.normalize(outputs["latent_S"], dim=1)
         latent_T = F.normalize(outputs["latent_T"], dim=1)
         latent_loss = 1 - torch.cosine_similarity(latent_S, latent_T, dim=1).mean()
-        if UWL:
+        if self.UWL:
             weight_r = torch.clamp(self.weight_r, min=-5, max=5)
             weight_m = torch.clamp(self.weight_m, min=-5, max=5)
             weight_l = torch.clamp(self.weight_l, min=-5, max=5)
@@ -144,17 +146,19 @@ class Autoencoder(nn.Module):
             weighted_reconstruction_loss = precision_r * reconstruction_loss + precision_r/2
 
             loss = weighted_reconstruction_loss + weighted_latent_loss + weighted_mask_loss
-            
+
         else:
             loss = weight_r * reconstruction_loss + weight_m * mask_loss + weight_l * latent_loss
         
         return {
+            "latent_S": outputs["latent_S"],
+            "latent_T": outputs["latent_T"],
             "total_loss": loss,
             "reconstruction_loss": reconstruction_loss,
             "latent_loss": latent_loss,
             "mask_loss": mask_loss,
-            "weight_r": weight_r if not UWL else precision_r.item(),
-            "weight_m": weight_m if not UWL else precision_m.item(),
-            "weight_l": weight_l if not UWL else precision_l.item()
+            "weight_r": weight_r if not self.UWL else precision_r.item(),
+            "weight_m": weight_m if not self.UWL else precision_m.item(),
+            "weight_l": weight_l if not self.UWL else precision_l.item()
         }
 
