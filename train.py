@@ -22,7 +22,7 @@ def inference(net, data_loader_test):
     labels_vector = []
     with torch.no_grad():
         for step, (x, y) in enumerate(data_loader_test):
-            feature_vector.extend(net.feature(x.cuda()).detach().cpu().numpy())
+            feature_vector.extend(net.inference(x.cuda()).detach().cpu().numpy())
             labels_vector.extend(y.numpy())
     feature_vector = np.array(feature_vector)
     labels_vector = np.array(labels_vector)
@@ -73,6 +73,8 @@ def train(args):
     data_loader_test = data_load.test_loader
     X_shape = args.data_dim
 
+    results = []
+
     init_lr = args.learning_rate
     max_epochs = args.epochs
     mask_prob = [0.4] * X_shape
@@ -83,7 +85,6 @@ def train(args):
                         masked_weights=args.masked_weights, 
                         CNN=args.CNN,
                         UWL=args.UWL).cuda()
-    model_checkpoint = "checkpoint.pth"
 
     optimizer = torch.optim.Adam(model.parameters(), lr=init_lr)
     
@@ -135,6 +136,55 @@ def train(args):
                     f"{meter.weight_r_avg:.6f},{meter.mask_loss_avg:.6f},"
                     f"{meter.weight_m_avg:.6f},{meter.latent_loss_avg:.6f},"
                     f"{meter.weight_l_avg:.6f}\n")
+        
+        if (epoch+1) % 20 == 0:
+            torch.save({
+                "optimizer": optimizer.state_dict(),
+                "model": model.state_dict()
+                }, args.save_path + f"/checkpoint_{epoch+1}.pth"
+            )
+            latent, true_label = inference(model, data_loader_test)
+            if latent.shape[0] < 10000:
+                clustering_model = KMeans(n_clusters=args.n_classes)
+                clustering_model.fit(latent)
+                pred_label = clustering_model.labels_
+            else:
+                adata = sc.AnnData(latent)
+                sc.pp.neighbors(adata, n_neighbors=10, use_rep="X")
+                # sc.tl.umap(adata)
+                reso = res_search_fixed_clus(adata, args.n_classes)
+                sc.tl.leiden(adata, resolution=reso)
+                pred = adata.obs['leiden'].to_list()
+                pred_label = [int(x) for x in pred]
+            
+
+            nmi, ari, acc = evaluate(true_label, pred_label)
+            ss = silhouette_score(latent, pred_label)
+
+            res = {}
+            res["nmi"] = nmi
+            res["ari"] = ari
+            res["acc"] = acc
+            res["sil"] = ss
+            res["dataset"] = args.dataset
+            res["epoch"] = epoch
+            results.append(res)
+
+            print("\tEvalute: [nmi: %f] [ari: %f] [acc: %f]" % (nmi, ari, acc))
+
+            np.save(args.save_path +"/embedding_"+str(epoch)+".npy", 
+                    latent)
+            pd.DataFrame({"True": true_label, 
+                        "Pred": pred_label}).to_csv(args.save_path +"/types_"+str(epoch)+".txt")
+            
+    torch.save({
+        "optimizer": optimizer.state_dict(),
+        "model": model.state_dict()
+        }, args.save_path + f"/checkpoint_{epoch+1}.pth"
+    )
+        
+        
+            
         
 
     

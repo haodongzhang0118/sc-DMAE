@@ -161,4 +161,8 @@ class Autoencoder(nn.Module):
             "weight_m": weight_m if not self.UWL else precision_m.item(),
             "weight_l": weight_l if not self.UWL else precision_l.item()
         }
+    
+    def inference(self, x):
+        latent = self.encoderS(x)
+        return latent
 
