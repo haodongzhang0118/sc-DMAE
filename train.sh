@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J flownet_train           # Job name
+#SBATCH -J singleCell          # Job name
 #SBATCH --time=48:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
