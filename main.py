@@ -43,7 +43,7 @@ def main():
     args = ConfigParser.parse_yaml(args.config)
     args = flatten_namespace(args)
     
-    files = []
+    files = ["pancreas_human"]
     results = pd.DataFrame()
     save_path = args.save_path
 
