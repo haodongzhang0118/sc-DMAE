@@ -7,7 +7,7 @@ from util import ConfigParser
 from train import train
 from types import SimpleNamespace
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 seed = 42
 
 torch.manual_seed(seed)

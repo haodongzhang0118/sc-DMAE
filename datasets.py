@@ -109,7 +109,7 @@ class scRNADataset(Dataset):
             self.iterator = self.prepare_training_pairs
         else:
             self.iterator = self.prepare_test_pairs
-        self.paths = {"data": config.data_path, "results": config.results_path, "checkpoint": config.checkpoint_path}
+        self.paths = {"data": config.data_path, "results": config.results_path, "checkpoint": config.save_path}
         self.dataset_name = dataset_name
         self.data_path = os.path.join(self.paths["data"], dataset_name)
         self.data, self.labels = self._load_data()
@@ -163,7 +163,7 @@ class scRNADataset(Dataset):
 
         nb_genes = 1000
 
-        X = np.ceil(X).astype(np.int)
+        X = np.ceil(X).astype(int)
         count_X = X
         print(X.shape, count_X.shape, f"keeping {nb_genes} genes")
         adata = sc.AnnData(X)
@@ -185,11 +185,11 @@ class scRNADataset(Dataset):
         return X, Y
 
     def normalize(self, adata, copy=True, highly_genes=None, filter_min_counts=True,
-                  size_factors=True, normalize_input=True, logtrans_input=True):
+                size_factors=True, normalize_input=True, logtrans_input=True):
         """
         Normalizes input data and retains only most variable genes
         (indicated by highly_genes parameter)
-
+        
         Args:
             adata ([type]): [description]
             copy (bool, optional): [description]. Defaults to True.
@@ -198,10 +198,10 @@ class scRNADataset(Dataset):
             size_factors (bool, optional): [description]. Defaults to True.
             normalize_input (bool, optional): [description]. Defaults to True.
             logtrans_input (bool, optional): [description]. Defaults to True.
-
+            
         Raises:
             NotImplementedError: [description]
-
+            
         Returns:
             [type]: [description]
         """
@@ -219,16 +219,21 @@ class scRNADataset(Dataset):
                 assert (adata.X.astype(int) != adata.X).nnz == 0, norm_error
             else:
                 assert np.all(adata.X.astype(int) == adata.X), norm_error
-
+        
+        if sp.sparse.issparse(adata.X):
+            adata.X = adata.X.astype(np.float32)
+        else:
+            adata.X = adata.X.astype(np.float32)
+        
         if filter_min_counts:
-            sc.pp.filter_genes(adata, min_counts=1)  # 3
+            sc.pp.filter_genes(adata, min_counts=1)
             sc.pp.filter_cells(adata, min_counts=1)
         if size_factors or normalize_input or logtrans_input:
             adata.raw = adata.copy()
         else:
             adata.raw = adata
         if size_factors:
-            sc.pp.normalize_per_cell(adata)
+            sc.pp.normalize_total(adata)
             adata.obs['size_factors'] = adata.obs.n_counts / \
                 np.median(adata.obs.n_counts)
         else:
@@ -241,7 +246,6 @@ class scRNADataset(Dataset):
         if normalize_input:
             sc.pp.scale(adata)
         return adata
-
 
 def apply_noise(X, p=[0.2,0.4]):
     p = torch.tensor(p)

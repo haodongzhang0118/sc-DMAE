@@ -2,9 +2,9 @@
 
 # Path parameters
 paths:
-  data_path: /users/hzhan351/scratch/single_cell/all_data/
-  results_path: /users/hzhan351/scratch/single_cell/results/
-  save_path: /users/hzhan351/scratch/single_cell/checkpoints/
+  data_path: /content/drive/MyDrive/Dataset/SingleCell/
+  results_path: /content/drive/MyDrive/SingleCell/results/
+  save_path: /content/drive/MyDrive/SingleCell/checkpoints/
   
 # Dataset parameters
 dataset:
@@ -25,4 +25,4 @@ training:
 # Model options
 model:
   CNN: false
-  UWL: false 
+  UWL: false

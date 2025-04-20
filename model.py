@@ -122,7 +122,7 @@ class Autoencoder(nn.Module):
             "latent_T": latent_T
         }
     
-    def compute_loss(self, x, y, comp_x, mask, weight_r = 0.3, weight_m = 0.4, weight_l=0.3):
+    def compute_loss(self, x, y, comp_x, mask, weight_r = 0.15, weight_m = 0.7, weight_l=0.15):
         outputs = self(x, comp_x)
         w_nums = mask * self.masked_weights + (1 - mask) * (1 - self.masked_weights)
         reconstruction_loss = (torch.mul(w_nums, mse(outputs["reconstruction"], y, reduction='none'))).mean()
