@@ -69,20 +69,17 @@ def train(args):
     data_loader = data_load.train_loader
     data_loader_test = data_load.test_loader
     X_shape = args.data_dim
-
     results = []
-
     init_lr = args.learning_rate
     max_epochs = args.epochs
     mask_prob = [0.4] * X_shape
-
+    
     model = Autoencoder(num_genes=X_shape, 
                         hidden_size=args.hidden_size, 
                         dropout=args.dropout, 
                         masked_weights=args.masked_weights, 
                         CNN=args.CNN,
                         UWL=args.UWL).cuda()
-
     optimizer = torch.optim.Adam(model.parameters(), lr=init_lr)
     
     # Create a logger to save metrics
@@ -93,17 +90,15 @@ def train(args):
     with open(log_file, 'w') as f:
         f.write("epoch,total_loss,reconstruction_loss,weight_r,mask_loss,weight_m,latent_loss,weight_l\n")
     
-    # Main training loop with tqdm for epochs
-    epoch_pbar = tqdm(range(max_epochs), desc="Training", unit="epoch")
+    print(f"Starting training for {max_epochs} epochs")
+    epoch_pbar = tqdm(range(max_epochs), desc="Training Progress", 
+                     bar_format='{l_bar}{bar:30}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]')
+    
     for epoch in epoch_pbar:
         model.train()
         meter = AverageMeter()
         
-        # Inner loop with tqdm for batches
-        batch_pbar = tqdm(data_loader, desc=f"Epoch {epoch+1}/{max_epochs}", 
-                          leave=False, unit="batch")
-        
-        for i, (x, y) in enumerate(batch_pbar):
+        for i, (x, y) in enumerate(data_loader):
             x = x.cuda()
             x_corrputed, mask, corrupted_X_comp = apply_noise(x, mask_prob)
             optimizer.zero_grad()
@@ -116,16 +111,18 @@ def train(args):
             loss["total_loss"].backward()
             optimizer.step()
             model._update_teacher()
-
             meter.update(loss)
-            batch_pbar.set_postfix({"loss": f"{meter.avg:.4f}"})
+            
+            if (i + 1) % 5 == 0 or (i + 1) == len(data_loader):
+                epoch_pbar.set_postfix({
+                    "loss": f"{meter.avg:.4f}",
+                    "r_loss": f"{meter.reconstruction_loss_avg:.4f}",
+                    "m_loss": f"{meter.mask_loss_avg:.4f}",
+                    "l_loss": f"{meter.latent_loss_avg:.4f}",
+                    "batch": f"{i+1}/{len(data_loader)}"
+                })
         
-        epoch_pbar.set_postfix({
-            "loss": f"{meter.avg:.4f}",
-            "r_loss": f"{meter.reconstruction_loss_avg:.4f}",
-            "m_loss": f"{meter.mask_loss_avg:.4f}",
-            "l_loss": f"{meter.latent_loss_avg:.4f}"
-        })
+        epoch_pbar.set_description(f"Epoch {epoch+1}/{max_epochs} - Loss: {meter.avg:.4f}")
         
         # Log metrics to file
         with open(log_file, 'a') as f:
@@ -135,6 +132,7 @@ def train(args):
                     f"{meter.weight_l_avg:.6f}\n")
         
         if (epoch+1) % 20 == 0 or epoch == max_epochs - 1:
+            print(f"\nSaving checkpoint and evaluating at epoch {epoch+1}...")
             torch.save({
                 "optimizer": optimizer.state_dict(),
                 "model": model.state_dict()
@@ -154,10 +152,8 @@ def train(args):
                 pred = adata.obs['leiden'].to_list()
                 pred_label = [int(x) for x in pred]
             
-
             nmi, ari, acc = evaluate(true_label, pred_label)
             ss = silhouette_score(latent, pred_label)
-
             res = {}
             res["nmi"] = nmi
             res["ari"] = ari
@@ -166,18 +162,12 @@ def train(args):
             res["dataset"] = args.dataset
             res["epoch"] = epoch
             results.append(res)
-
-            print("\tEvalute: [nmi: %f] [ari: %f] [acc: %f]" % (nmi, ari, acc))
-
+            print(f"\tEvaluation: [nmi: {nmi:.4f}] [ari: {ari:.4f}] [acc: {acc:.4f}] [sil: {ss:.4f}]")
             np.save(args.save_path +"/embedding_"+str(epoch)+".npy", 
                     latent)
             pd.DataFrame({"True": true_label, 
                         "Pred": pred_label}).to_csv(args.save_path +"/types_"+str(epoch)+".txt")
-            
-    return results
-        
-        
-            
-        
-
     
+    print("\nTraining completed!")
+    return results
+
