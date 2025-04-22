@@ -1,4 +1,5 @@
 import os
+import glob
 import argparse
 import torch
 import numpy as np
@@ -43,18 +44,14 @@ def main():
     args = ConfigParser.parse_yaml(args.config)
     args = flatten_namespace(args)
     
-    files = ["pancreas_human"]
+    h5_files = glob.glob(os.path.join(args.data_path, "*.h5"))
+    files = [os.path.splitext(os.path.basename(f))[0] for f in h5_files]
+    print(f"Found {len(files)} datasets under {args.data_path}")
+    print(f"They are: {files}")
+    
     results = pd.DataFrame()
     save_path = args.save_path
 
-    # for dataset in files:
-    #     print(f"Training on {dataset}")
-    #     args.dataset = dataset
-    #     args.save_path = make_dir(save_path, dataset)
-
-    #     res_list = train(args)
-    #     dataset_results = pd.DataFrame(res_list)
-    #     dataset_results.to_csv(args.results_path + f"/{dataset}_results.csv", index=False)
     for dataset in files:
         print(f"Training on {dataset}")
         args.dataset = dataset
