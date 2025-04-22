@@ -47,18 +47,71 @@ def main():
     results = pd.DataFrame()
     save_path = args.save_path
 
+    # for dataset in files:
+    #     print(f"Training on {dataset}")
+    #     args.dataset = dataset
+    #     args.save_path = make_dir(save_path, dataset)
+
+    #     res_list = train(args)
+    #     dataset_results = pd.DataFrame(res_list)
+    #     dataset_results.to_csv(args.results_path + f"/{dataset}_results.csv", index=False)
     for dataset in files:
         print(f"Training on {dataset}")
         args.dataset = dataset
         args.save_path = make_dir(save_path, dataset)
 
-        # res = train(args)
-        # results = pd.concat([results, pd.DataFrame([res])], ignore_index=True)
-        # results.to_csv(args.results_path + f"/{dataset}_results.csv", header=True)
-
-        res_list = train(args)
-        dataset_results = pd.DataFrame(res_list)
-        dataset_results.to_csv(args.results_path + f"/{dataset}_results.csv", index=False)
+        results_dataset_dir = os.path.join(args.results_path, dataset)
+        os.makedirs(results_dataset_dir, exist_ok=True)
+        
+        all_iterations_results = []
+        avg_metrics_by_epoch = {}
+        
+        iterations = args.iterations
+        for iteration in range(iterations):
+            print(f"Iteration {iteration+1}/{iterations} for dataset {dataset}")
+            
+            res_list = train(args, iteration)
+            
+            for res in res_list:
+                res['iteration'] = iteration + 1
+            
+            all_iterations_results.extend(res_list)
+            
+            for res in res_list:
+                epoch = res['epoch']
+                if epoch not in avg_metrics_by_epoch:
+                    avg_metrics_by_epoch[epoch] = {
+                        'nmi_sum': 0, 'ari_sum': 0, 'acc_sum': 0, 'sil_sum': 0, 'count': 0
+                    }
+                
+                avg_metrics_by_epoch[epoch]['nmi_sum'] += res['nmi']
+                avg_metrics_by_epoch[epoch]['ari_sum'] += res['ari']
+                avg_metrics_by_epoch[epoch]['acc_sum'] += res['acc']
+                avg_metrics_by_epoch[epoch]['sil_sum'] += res['sil']
+                avg_metrics_by_epoch[epoch]['count'] += 1
+        
+        all_results_df = pd.DataFrame(all_iterations_results)
+        all_results_df.to_csv(args.results_path + f"/{dataset}/all_iterations_results.csv", index=False)
+        
+        avg_metrics = []
+        for epoch, metrics in avg_metrics_by_epoch.items():
+            count = metrics['count']
+            avg_metrics.append({
+                'epoch': epoch,
+                'avg_nmi': metrics['nmi_sum'] / count,
+                'avg_ari': metrics['ari_sum'] / count,
+                'avg_acc': metrics['acc_sum'] / count,
+                'avg_sil': metrics['sil_sum'] / count,
+                'iterations': count,
+            })
+        
+        avg_metrics_df = pd.DataFrame(avg_metrics)
+        avg_metrics_df.to_csv(args.results_path + f"/{dataset}/average_metrics.csv", index=False)
+        
+        print(f"Completed all {iterations} iterations for dataset {dataset}")
+        print(f"Results saved to: {args.results_path}/{dataset}/all_iterations_results.csv")
+        print(f"Average metrics saved to: {args.results_path}/{dataset}/average_metrics.csv")
+        print()
 
 if __name__ == "__main__":
     main()

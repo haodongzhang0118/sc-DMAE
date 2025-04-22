@@ -21,6 +21,7 @@ training:
   dropout: 0.3
   masked_weights: 0.75
   num_workers: 4
+  iterations: 20
   
 # Model options
 model:

@@ -64,7 +64,7 @@ def res_search_fixed_clus(adata, fixed_clus_count, increment=0.02):
 
     return reso
 
-def train(args):
+def train(args, iteration):
     data_load = Loader(args, dataset_name=args.dataset, drop_last=True)
     data_loader = data_load.train_loader
     data_loader_test = data_load.test_loader
@@ -82,9 +82,9 @@ def train(args):
                         UWL=args.UWL).cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=init_lr)
     
-    # Create a logger to save metrics
-    log_file = os.path.join(args.save_path, "training_log.csv")
-    os.makedirs(args.save_path, exist_ok=True)
+    iteration_dir = os.path.join(args.save_path, f"{iteration}")
+    os.makedirs(iteration_dir, exist_ok=True)
+    log_file = os.path.join(iteration_dir, "training_log.csv")
     
     # Initialize the log with headers
     with open(log_file, 'w') as f:
@@ -136,7 +136,7 @@ def train(args):
             torch.save({
                 "optimizer": optimizer.state_dict(),
                 "model": model.state_dict()
-                }, args.save_path + f"/checkpoint_{epoch+1}.pth"
+                }, args.save_path + f"/{iteration}/checkpoint_{epoch+1}.pth"
             )
             latent, true_label = inference(model, data_loader_test)
             if latent.shape[0] < 10000:
@@ -155,19 +155,17 @@ def train(args):
             nmi, ari, acc = evaluate(true_label, pred_label)
             ss = silhouette_score(latent, pred_label)
             res = {}
+            res["epoch"] = epoch
             res["nmi"] = nmi
             res["ari"] = ari
             res["acc"] = acc
             res["sil"] = ss
-            res["dataset"] = args.dataset
-            res["epoch"] = epoch
             results.append(res)
             print(f"\tEvaluation: [nmi: {nmi:.4f}] [ari: {ari:.4f}] [acc: {acc:.4f}] [sil: {ss:.4f}]")
-            np.save(args.save_path +"/embedding_"+str(epoch)+".npy", 
+            np.save(args.save_path +f"/{iteration}/embedding_"+str(epoch)+".npy", 
                     latent)
             pd.DataFrame({"True": true_label, 
-                        "Pred": pred_label}).to_csv(args.save_path +"/types_"+str(epoch)+".txt")
-    
-    print("\nTraining completed!")
+                        "Pred": pred_label}).to_csv(args.save_path +f"/{iteration}/types_"+str(epoch)+".txt")
+            
     return results
 
