@@ -1,4 +1,4 @@
-## sc-DMAE
+# sc-DMAE
 
 ## Installation
 The code is based on Python3.11. You could use either virtualenv or conda to setup a specified environment. And then run:
