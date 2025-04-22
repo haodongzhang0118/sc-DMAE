@@ -89,6 +89,8 @@ def main():
                 avg_metrics_by_epoch[epoch]['acc_sum'] += res['acc']
                 avg_metrics_by_epoch[epoch]['sil_sum'] += res['sil']
                 avg_metrics_by_epoch[epoch]['count'] += 1
+            print(f"Iteration {iteration+1}/{iterations} Completed!")
+            print()
         
         all_results_df = pd.DataFrame(all_iterations_results)
         all_results_df.to_csv(args.results_path + f"/{dataset}/all_iterations_results.csv", index=False)
@@ -115,6 +117,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 
