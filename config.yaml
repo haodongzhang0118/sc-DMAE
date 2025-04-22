@@ -25,4 +25,4 @@ training:
 # Model options
 model:
   CNN: false
-  UWL: false
+  UWL: true

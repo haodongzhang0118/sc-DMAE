@@ -52,10 +52,13 @@ def main():
         args.dataset = dataset
         args.save_path = make_dir(save_path, dataset)
 
-        res = train(args)
-        # results =results.append(res)
-        results = pd.concat([results, pd.DataFrame([res])], ignore_index=True)
-        results.to_csv(args.results_path + f"/{dataset}_results.csv", header=True)
+        # res = train(args)
+        # results = pd.concat([results, pd.DataFrame([res])], ignore_index=True)
+        # results.to_csv(args.results_path + f"/{dataset}_results.csv", header=True)
+
+        res_list = train(args)
+        dataset_results = pd.DataFrame(res_list)
+        dataset_results.to_csv(args.results_path + f"/{dataset}_results.csv", index=False)
 
 if __name__ == "__main__":
     main()
