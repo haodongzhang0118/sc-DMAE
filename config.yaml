@@ -2,13 +2,13 @@
 
 # Path parameters
 paths:
-  data_path: /content/drive/MyDrive/Dataset/SingleCell/
-  results_path: /content/drive/MyDrive/SingleCell/results/
-  save_path: /content/drive/MyDrive/SingleCell/checkpoints/
+  data_path: datasets
+  results_path: results
+  save_path: checkpoints
   
 # Dataset parameters
 dataset:
-  dataset: 10X_PBMC
+  dataset: Pollen
   data_dim: 1000
   n_classes: 4
 
