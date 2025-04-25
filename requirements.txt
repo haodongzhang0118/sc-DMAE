@@ -7,3 +7,5 @@ scikit_learn
 scipy
 torch
 pyyaml
+igraph
+leidenalg
