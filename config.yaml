@@ -2,9 +2,9 @@
 
 # Path parameters
 paths:
-  data_path: /home/haodong/Desktop/project/scDMAE/datasets
-  results_path: /home/haodong/Desktop/project/scDMAE/sc-DMAE/results
-  save_path: /home/haodong/Desktop/project/scDMAE/checkpoints
+  data_path: datasets
+  results_path: results
+  save_path: checkpoints
   
 # Dataset parameters
 dataset:
