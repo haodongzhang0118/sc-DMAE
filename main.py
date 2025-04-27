@@ -56,8 +56,6 @@ def main():
     save_path = args.save_path
 
     for dataset in files:
-        if dataset not in ["hrvatin", "Bach"]: continue
-        print(f"Training on {dataset}")
         args.dataset = dataset
         args.save_path = make_dir(save_path, dataset)
 
