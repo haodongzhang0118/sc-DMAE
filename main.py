@@ -12,11 +12,6 @@ import warnings
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-seed = 42
-
-torch.manual_seed(seed)
-torch.cuda.manual_seed(seed)
-np.random.seed(seed)
 
 def make_dir(directory_path, new_folder_name):
     """Creates an expected directory if it does not exist"""
@@ -55,6 +50,11 @@ def main():
     results = pd.DataFrame()
     save_path = args.save_path
 
+    if args.UWL:
+      print("Using UWL")
+    else:
+      print("Not using UWL")
+
     for dataset in files:
         args.dataset = dataset
         args.save_path = make_dir(save_path, dataset)
@@ -64,9 +64,15 @@ def main():
         
         all_iterations_results = []
         avg_metrics_by_epoch = {}
-        
+        seeds = [83, 21, 64, 97, 11, 49, 70, 39, 0, 58, 16, 75, 27, 32, 3, 95, 45, 90, 8, 66]
         iterations = args.iterations
         for iteration in range(iterations):
+            seed = seeds[iteration]
+            torch.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+            torch.cuda.manual_seed(seed)
+            np.random.seed(seed)
+
             print(f"Iteration {iteration+1}/{iterations} for dataset {dataset}")
             
             res_list = train(args, iteration)

@@ -106,11 +106,14 @@ def train(args, iteration):
                 x=x_corrputed,
                 y=x,
                 comp_x=corrupted_X_comp,
-                mask=mask
+                mask=mask,
+                use_teacher=epoch>20
             )
             loss["total_loss"].backward()
             optimizer.step()
-            model._update_teacher()
+            if epoch> 20:
+                model._update_teacher()
+                
             meter.update(loss)
             
             if (i + 1) % 5 == 0 or (i + 1) == len(data_loader):
