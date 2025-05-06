@@ -56,6 +56,8 @@ def main():
       print("Not using UWL")
 
     for dataset in files:
+        if dataset != "hrvatin":
+            continue
         args.dataset = dataset
         args.save_path = make_dir(save_path, dataset)
 
